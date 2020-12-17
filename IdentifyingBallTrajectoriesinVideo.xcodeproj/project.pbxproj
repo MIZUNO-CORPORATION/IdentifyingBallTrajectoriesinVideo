@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,6 +13,7 @@
 		962257B7258B0D2B00609001 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 962257B5258B0D2B00609001 /* Main.storyboard */; };
 		962257B9258B0D2E00609001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 962257B8258B0D2E00609001 /* Assets.xcassets */; };
 		962257BC258B0D2E00609001 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 962257BA258B0D2E00609001 /* LaunchScreen.storyboard */; };
+		962257C6258B0E0600609001 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962257C5258B0E0600609001 /* PreviewView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,9 @@
 		962257B8258B0D2E00609001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		962257BB258B0D2E00609001 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		962257BD258B0D2E00609001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		962257C5258B0E0600609001 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
+		962257CA258B132300609001 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		962257CC258B1BE600609001 /* golf.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = golf.gif; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,6 +44,8 @@
 		962257A3258B0D2B00609001 = {
 			isa = PBXGroup;
 			children = (
+				962257CA258B132300609001 /* README.md */,
+				962257CB258B1BE600609001 /* Demo */,
 				962257AE258B0D2B00609001 /* IdentifyingBallTrajectoriesinVideo */,
 				962257AD258B0D2B00609001 /* Products */,
 			);
@@ -59,12 +65,21 @@
 				962257AF258B0D2B00609001 /* AppDelegate.swift */,
 				962257B1258B0D2B00609001 /* SceneDelegate.swift */,
 				962257B3258B0D2B00609001 /* ViewController.swift */,
+				962257C5258B0E0600609001 /* PreviewView.swift */,
 				962257B5258B0D2B00609001 /* Main.storyboard */,
 				962257B8258B0D2E00609001 /* Assets.xcassets */,
 				962257BA258B0D2E00609001 /* LaunchScreen.storyboard */,
 				962257BD258B0D2E00609001 /* Info.plist */,
 			);
 			path = IdentifyingBallTrajectoriesinVideo;
+			sourceTree = "<group>";
+		};
+		962257CB258B1BE600609001 /* Demo */ = {
+			isa = PBXGroup;
+			children = (
+				962257CC258B1BE600609001 /* golf.gif */,
+			);
+			path = Demo;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -102,7 +117,7 @@
 				};
 			};
 			buildConfigurationList = 962257A7258B0D2B00609001 /* Build configuration list for PBXProject "IdentifyingBallTrajectoriesinVideo" */;
-			compatibilityVersion = "Xcode 9.3";
+			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -138,6 +153,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				962257B4258B0D2B00609001 /* ViewController.swift in Sources */,
+				962257C6258B0E0600609001 /* PreviewView.swift in Sources */,
 				962257B0258B0D2B00609001 /* AppDelegate.swift in Sources */,
 				962257B2258B0D2B00609001 /* SceneDelegate.swift in Sources */,
 			);
@@ -223,6 +239,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -277,6 +294,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -287,8 +305,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = BDVDN9SNKG;
+				DEVELOPMENT_TEAM = HN6L86EN23;
 				INFOPLIST_FILE = IdentifyingBallTrajectoriesinVideo/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -306,8 +325,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = BDVDN9SNKG;
+				DEVELOPMENT_TEAM = HN6L86EN23;
 				INFOPLIST_FILE = IdentifyingBallTrajectoriesinVideo/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
