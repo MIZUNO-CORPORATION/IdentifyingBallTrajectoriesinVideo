@@ -171,7 +171,7 @@ class ViewController: UIViewController {
                 return CGPoint(x: point.x, y: 1 - point.y)
             }
             
-            let roi: CGRect = CGRect(x: 0.9, y: 0.25, width: 0.1, height: 0.5)
+            //let roi: CGRect = CGRect(x: 0.9, y: 0.25, width: 0.1, height: 0.5)
             if let rect = panGestureRect {
                 if !isROI(detectedPoints: detectedPoints, roi: rect) {
                     continue
@@ -224,13 +224,14 @@ class ViewController: UIViewController {
                     let convertedPoint = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: point)
                     detectedPointPath.addLine(to: convertedPoint)
                 }
+                detectedPointPath.move(to: CGPoint())
                 
                 projectedPointPath.move(to: videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: trajectoryProperty.value.projectedPoints[0]))
                 for point in trajectoryProperty.value.projectedPoints {
                     let convertedPoint = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: point)
                     projectedPointPath.addLine(to: convertedPoint)
                 }
-                detectedPointPath.move(to: CGPoint())
+                projectedPointPath.move(to: CGPoint())
             }
             detectedPointPath.close()
             projectedPointPath.close()
