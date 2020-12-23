@@ -28,6 +28,7 @@
 		962257C5258B0E0600609001 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
 		962257CA258B132300609001 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		962257CC258B1BE600609001 /* golf.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = golf.gif; sourceTree = "<group>"; };
+		D13D3CEF258CF7BA00E2933E /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; path = images; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				962257CA258B132300609001 /* README.md */,
+				D13D3CEF258CF7BA00E2933E /* images */,
 				962257CB258B1BE600609001 /* Demo */,
 				962257AE258B0D2B00609001 /* IdentifyingBallTrajectoriesinVideo */,
 				962257AD258B0D2B00609001 /* Products */,

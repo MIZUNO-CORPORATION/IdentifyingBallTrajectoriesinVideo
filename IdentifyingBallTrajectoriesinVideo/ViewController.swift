@@ -15,17 +15,12 @@ class ViewController: UIViewController {
     private let drawOverlay = CAShapeLayer()
     
     private let captureSession = AVCaptureSession()
-    let captureSessionQueue = DispatchQueue(label: "com.example.apple-samplecode.CaptureSessionQueue")
+    let captureSessionQueue = DispatchQueue(label: "IdentifyingBallTrajectoriesinVideo.CaptureSessionQueue")
     
     var videoDataOutput = AVCaptureVideoDataOutput()
-    let videoDataOutputQueue = DispatchQueue(label: "com.example.apple-samplecode.VideoDataOutputQueue")
+    let videoDataOutputQueue = DispatchQueue(label: "IdentifyingBallTrajectoriesinVideo.VideoDataOutputQueue")
     
     var request: VNDetectTrajectoriesRequest!
-//    private lazy var request: VNDetectTrajectoriesRequest = {
-//        return VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero,
-//                                           trajectoryLength: 10,
-//                                           completionHandler: completionHandler)
-//    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -33,19 +28,96 @@ class ViewController: UIViewController {
         
         previewView.videoPreviewLayer.session = captureSession
         previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
+        
+        panGestureRectLayer.strokeColor = UIColor.blue.cgColor
+        panGestureRectLayer.lineWidth = 3.0
+        panGestureRectLayer.fillColor = UIColor.clear.cgColor
+        panGestureRectLayer.lineCap = .round
+        panGestureRectLayer.opacity = 0.2
+        
         captureSessionQueue.async {
             self.setupCamera()
             
 //            DispatchQueue.main.async {
+            // This method does not work??
 //                // Figure out initial ROI.
+//                //self.request.regionOfInterest = CGRect(x: 0, y: 0, width: 0.2, height: 0.2)
+//                print(self.request.regionOfInterest)
 //            }
         }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         captureSession.stopRunning()
+        request = nil
         super.viewWillDisappear(animated)
     }
+    
+    var panGestureRect: CGRect?
+    var panGestureBeganPoint: CGPoint?
+    var panGestureEndedPoint: CGPoint?
+    var panGestureRectLayer: CAShapeLayer = CAShapeLayer()
+    
+    @IBAction func tapGesture(_ sender: UITapGestureRecognizer) {
+        switch sender.state {
+        case .ended:
+            panGestureRect = nil
+            panGestureRectLayer.removeFromSuperlayer()
+        default:
+            break
+        }
+        
+    }
+    
+    @IBAction func panGesture(_ sender: UIPanGestureRecognizer) {
+        switch sender.state {
+        case .began:
+            print("began")
+            let location = sender.location(in: previewView)
+            panGestureBeganPoint = CGPoint(x: location.x, y: location.y)
+            panGestureRectLayer.removeFromSuperlayer()
+        case .ended:
+            print("ended")
+            let location = sender.location(in: previewView)
+            panGestureEndedPoint = CGPoint(x: location.x, y: location.y)
+            
+            if let p0 = panGestureEndedPoint, let p1 = panGestureBeganPoint {
+                panGestureRect = previewView.videoPreviewLayer.metadataOutputRectConverted(fromLayerRect: CGRect(x: p0.x, y: p0.y, width: p1.x-p0.x, height: p1.y-p0.y))
+            } else {
+                break
+            }
+            
+            if let rect = self.panGestureRect {
+                let convertedRect = previewView.videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: rect)
+                let panGestureRectPath: UIBezierPath = UIBezierPath(rect: convertedRect)
+                panGestureRectLayer.path = panGestureRectPath.cgPath
+                self.previewView.videoPreviewLayer.addSublayer(panGestureRectLayer)
+            }
+            
+        case .changed:
+            panGestureRectLayer.removeFromSuperlayer()
+            
+            let location = sender.location(in: previewView)
+            panGestureEndedPoint = CGPoint(x: location.x, y: location.y)
+            
+            if let p0 = panGestureEndedPoint, let p1 = panGestureBeganPoint {
+                panGestureRect = previewView.videoPreviewLayer.metadataOutputRectConverted(fromLayerRect: CGRect(x: p0.x, y: p0.y, width: p1.x-p0.x, height: p1.y-p0.y))
+            } else {
+                break
+            }
+            
+            if let rect = self.panGestureRect {
+                let convertedRect = previewView.videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: rect)
+                let panGestureRectPath: UIBezierPath = UIBezierPath(rect: convertedRect)
+                panGestureRectLayer.path = panGestureRectPath.cgPath
+                self.previewView.videoPreviewLayer.addSublayer(panGestureRectLayer)
+            }
+            
+        default:
+            break
+        }
+    }
+    
 
     // MARK: - Camera setup
     func setupCamera() {
@@ -87,80 +159,102 @@ class ViewController: UIViewController {
 
 // MARK: - Vision handler
     func completionHandler(request: VNRequest, error: Error?) {
-        
-        var redTrajectries = [[CGPoint]]()
-        var greenTrajectries = [[CGPoint]]()
-        
         guard let observations = request.results as? [VNTrajectoryObservation] else { return }
         
         for observation in observations {
             
-            let detectedPoints: [CGPoint] = observation.detectedPoints.compactMap {point  in
+            let uuid: UUID = observation.uuid
+            let detectedPoints: [CGPoint] = observation.detectedPoints.compactMap {point in
                 return CGPoint(x: point.x, y: 1 - point.y)
             }
-            redTrajectries.append(detectedPoints)
-            
             let projectedPoints: [CGPoint] = observation.projectedPoints.compactMap { point in
                 return CGPoint(x: point.x, y: 1 - point.y)
             }
-            greenTrajectries.append(projectedPoints)
+            
+            let roi: CGRect = CGRect(x: 0.9, y: 0.25, width: 0.1, height: 0.5)
+            if let rect = panGestureRect {
+                if !isROI(detectedPoints: detectedPoints, roi: rect) {
+                    continue
+                }
+            }
+            
+            
+            if trajectoriesDict.keys.contains(uuid){
+                trajectoriesDict[uuid]!.detectedPoints.append(detectedPoints.last!)
+                trajectoriesDict[uuid]!.projectedPoints = projectedPoints
+                trajectoriesDict[uuid]!.equationCoefficients = observation.equationCoefficients
+                trajectoriesDict[uuid]!.confidence = observation.confidence
+                trajectoriesDict[uuid]!.count = 0
+            }else {
+                trajectoriesDict[uuid] = TrajectoryProperty(detectedPoints: detectedPoints, projectedPoints: projectedPoints, equationCoefficients: observation.equationCoefficients, confidence: observation.confidence)
+            }
         }
-        
-        show(trajectoryGroups: [(color: UIColor.red.cgColor, trajectories: redTrajectries), (color: UIColor.green.cgColor, trajectories: greenTrajectries)])
-        
+        drawTrajectories()
     }
     
     // MARK: - Trajectory drawing
     
     // Draw a Trajectory on screen. Must be called from main queue.
     var trajectoryLayer = [CAShapeLayer]()
+    var trajectoriesDict: [UUID: TrajectoryProperty] = [:]
     
     // Remove all drawn trajectories. Must be called on main queue.
-    func removeTrajectories() {
+    func removeTrajectoryLayers() {
         for layer in trajectoryLayer {
             layer.removeFromSuperlayer()
         }
         trajectoryLayer.removeAll()
     }
     
-    typealias ColoredTrajectoryGroup = (color: CGColor, trajectories: [[CGPoint]])
-    
-    // Draws groups of colored trajectories.
-    func show(trajectoryGroups: [ColoredTrajectoryGroup]) {
+    // Draws trajectories.
+    func drawTrajectories() {
         DispatchQueue.main.async {
-            self.removeTrajectories()
-            let videoPreviewLayer = self.previewView.videoPreviewLayer
-            for trajectoryGroup in trajectoryGroups {
-                let color = trajectoryGroup.color
-                let path = UIBezierPath()
-                path.move(to: CGPoint())
-                for trajectories in trajectoryGroup.trajectories {
-                    var isStart: Bool = true
-                    for trajectory in trajectories {
-                        
-                        let convertedTrajectory = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: trajectory)
-                        if isStart {
-                            path.move(to: convertedTrajectory)
-                            isStart = false
-                        }
-                        path.addLine(to: convertedTrajectory)
-                    }
-                }
-                path.move(to: CGPoint())
-                path.close()
-                
-                let shapeLayer = CAShapeLayer()
-                shapeLayer.path = path.cgPath
-                shapeLayer.strokeColor = color
-                shapeLayer.lineWidth = 3.0
-                shapeLayer.fillColor = UIColor.clear.cgColor
-                shapeLayer.lineCap = .round
-                shapeLayer.opacity = 0.5
-                
-                self.trajectoryLayer.append(shapeLayer)
-                self.previewView.videoPreviewLayer.insertSublayer(shapeLayer, at: 1)
-                
+            self.removeTrajectoryLayers()
+            if self.trajectoriesDict.count == 0 {
+                return
             }
+            
+            let videoPreviewLayer = self.previewView.videoPreviewLayer
+            let detectedPointPath = UIBezierPath()
+            let projectedPointPath = UIBezierPath()
+            
+            for trajectoryProperty in self.trajectoriesDict {
+                detectedPointPath.move(to: videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: trajectoryProperty.value.detectedPoints[0]))
+                for point in trajectoryProperty.value.detectedPoints {
+                    let convertedPoint = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: point)
+                    detectedPointPath.addLine(to: convertedPoint)
+                }
+                
+                projectedPointPath.move(to: videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: trajectoryProperty.value.projectedPoints[0]))
+                for point in trajectoryProperty.value.projectedPoints {
+                    let convertedPoint = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: point)
+                    projectedPointPath.addLine(to: convertedPoint)
+                }
+                detectedPointPath.move(to: CGPoint())
+            }
+            detectedPointPath.close()
+            projectedPointPath.close()
+            
+            let detectedPointLayer = CAShapeLayer()
+            detectedPointLayer.path = detectedPointPath.cgPath
+            detectedPointLayer.strokeColor = UIColor.red.cgColor
+            detectedPointLayer.lineWidth = 3.0
+            detectedPointLayer.fillColor = UIColor.clear.cgColor
+            detectedPointLayer.lineCap = .round
+            detectedPointLayer.opacity = 0.3
+            self.trajectoryLayer.append(detectedPointLayer)
+            
+            let projectedPointLayer = CAShapeLayer()
+            projectedPointLayer.path = projectedPointPath.cgPath
+            projectedPointLayer.strokeColor = UIColor.green.cgColor
+            projectedPointLayer.lineWidth = 3.0
+            projectedPointLayer.fillColor = UIColor.clear.cgColor
+            projectedPointLayer.lineCap = .round
+            projectedPointLayer.opacity = 0.3
+            self.trajectoryLayer.append(projectedPointLayer)
+            
+            self.previewView.videoPreviewLayer.addSublayer(detectedPointLayer)
+            self.previewView.videoPreviewLayer.addSublayer(projectedPointLayer)
         }
     }
 }
@@ -172,11 +266,20 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         
+        for key in trajectoriesDict.keys {
+            trajectoriesDict[key]!.count += 1
+            //If the trajectory with the same key(UUID) is not added after 5 frames, delete it.
+            if trajectoriesDict[key]!.count > 5 {
+                trajectoriesDict[key] = nil
+            }
+        }
+        
+        // These methods do not work??
         // Set the normalized (0.0 to 1.0) minimum and maximum object sizes.
-        //request.minimumObjectSize = 0.1//smallDiameter / width
-        //request.objectMaximumNormalizedRadius = 0.0//largeDiameter / width
+        //request.objectMinimumNormalizedRadius = 0.0
+        //request.objectMaximumNormalizedRadius = 0.2
         // Set the ROI to the left half of the image.
-        //request.regionOfInterest = CGRect(x: 0.3, y: 0, width: 0.7, height: 1.0)
+        //request.regionOfInterest = CGRect(x: 0.0, y: 0.0, width: 0.5, height: 1.0)
         
         do {
             let requestHandler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer)
@@ -187,4 +290,32 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     }
 }
 
+struct TrajectoryProperty {
+    var detectedPoints: [CGPoint]
+    var projectedPoints: [CGPoint]
+    var equationCoefficients: simd_float3
+    var confidence: Float
+    var count: Int = 0
+}
 
+// MARK: - Apply business logic
+extension ViewController {
+    func isROI(detectedPoints: [CGPoint], roi: CGRect) -> Bool {
+        let l0 = CGPoint(x: detectedPoints[0].x, y: detectedPoints[0].y)
+        let l4 = CGPoint(x: detectedPoints[4].x, y: detectedPoints[4].y)
+        let p: [CGPoint] = [CGPoint(x: roi.minX, y: roi.minY), CGPoint(x: roi.maxX, y: roi.minY), CGPoint(x: roi.maxX, y: roi.maxY), CGPoint(x: roi.minX, y: roi.maxY)]
+        
+        for i in 0 ... 3 {
+            let determinant: CGFloat = (l4.x - l0.x)*(-p[(i+1)%4].y + p[i].y) - (l4.y - l0.y)*(-p[(i+1)%4].x + p[i].x)
+            if determinant == 0 {
+                continue
+            }
+            let s: CGFloat = 1/determinant * ((-p[(i+1)%4].y + p[i].y)*(p[i].x - l0.x) + (p[(i+1)%4].x - p[i].x)*(p[i].y - l0.y))
+            let t: CGFloat = 1/determinant * ((-l4.y + l0.y)*(p[i].x - l0.x) + (l4.x - l0.x)*(p[i].y - l0.y))
+            if s <= 0 && 0 <= t && t <= 1 {
+                return true
+            }
+        }
+        return false
+    }
+}
