@@ -27,6 +27,21 @@ SwiftのVsion Frameworkの中にある軌道検出クラスVNDetectTrajectoriesR
   1. AVFoundation
 
 ### 軌道検出に関係するクラスの説明
+```
+request = VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero, trajectoryLength: 10, completionHandler: completionHandler)
+```
+
+```swift: ViewController.swift
+func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    do {
+        let requestHandler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer)
+        try requestHandler.perform([request])
+    } catch {
+        // Handle the error.
+    }
+}
+```
+
 1. VNDetectTrajectoriesRequest
     - インスタンスを生成する際に、引数で下記を与えます
     - frameAnalysisSpacing: CMTime

@@ -11,23 +11,31 @@ import Vision
 
 class ViewController: UIViewController {
 
-    @IBOutlet weak var previewView: PreviewView!
-    private let drawOverlay = CAShapeLayer()
-    
+    @IBOutlet var previewView: PreviewView!
+    // Properties for UI
     private let captureSession = AVCaptureSession()
-    let captureSessionQueue = DispatchQueue(label: "IdentifyingBallTrajectoriesinVideo.CaptureSessionQueue")
+    private let captureSessionQueue = DispatchQueue(label: "IdentifyingBallTrajectoriesinVideo.CaptureSessionQueue", qos: .userInteractive)
     
-    var videoDataOutput = AVCaptureVideoDataOutput()
-    let videoDataOutputQueue = DispatchQueue(label: "IdentifyingBallTrajectoriesinVideo.VideoDataOutputQueue")
+    // Properties for capturing a video
+    private var videoDataOutput = AVCaptureVideoDataOutput()
+    private let videoDataOutputQueue = DispatchQueue(label: "IdentifyingBallTrajectoriesinVideo.VideoDataOutputQueue", qos: .userInteractive)
     
-    var request: VNDetectTrajectoriesRequest!
+    // Properties for detecting trajectories
+    private var request: VNDetectTrajectoriesRequest!
+    private let trajectoryQueue = DispatchQueue(label: "IdentifyingBallTrajectoriesinVideo.Trajectory", qos: .userInteractive)
+    
+    // Properties for drawing trajectories
+    private var trajectoryLayer = [CAShapeLayer]()
+    private var trajectoryDictionary: [UUID: TrajectoryProperty] = [:]
+    var roiRect: CGRect?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         request = VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero, trajectoryLength: 10, completionHandler: completionHandler)
         
         previewView.videoPreviewLayer.session = captureSession
-        previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
+        previewView.videoPreviewLayer.videoGravity = .resizeAspect
+        previewView.frame = view.bounds
         
         panGestureRectLayer.strokeColor = UIColor.blue.cgColor
         panGestureRectLayer.lineWidth = 3.0
@@ -37,20 +45,13 @@ class ViewController: UIViewController {
         
         captureSessionQueue.async {
             self.setupCamera()
-            
-//            DispatchQueue.main.async {
-            // This method does not work??
-//                // Figure out initial ROI.
-//                //self.request.regionOfInterest = CGRect(x: 0, y: 0, width: 0.2, height: 0.2)
-//                print(self.request.regionOfInterest)
-//            }
         }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
         captureSession.stopRunning()
         request = nil
-        super.viewWillDisappear(animated)
     }
     
     var panGestureRect: CGRect?
@@ -61,12 +62,16 @@ class ViewController: UIViewController {
     @IBAction func tapGesture(_ sender: UITapGestureRecognizer) {
         switch sender.state {
         case .ended:
-            panGestureRect = nil
+            request = VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero, trajectoryLength: 10, completionHandler: completionHandler)
+            
             panGestureRectLayer.removeFromSuperlayer()
+            roiRect = nil
+            panGestureBeganPoint = nil
+            panGestureEndedPoint = nil
+            panGestureRect = nil
         default:
             break
         }
-        
     }
     
     @IBAction func panGesture(_ sender: UIPanGestureRecognizer) {
@@ -78,22 +83,21 @@ class ViewController: UIViewController {
             panGestureRectLayer.removeFromSuperlayer()
         case .ended:
             print("ended")
+            request = VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero, trajectoryLength: 10, completionHandler: completionHandler)
+            
             let location = sender.location(in: previewView)
             panGestureEndedPoint = CGPoint(x: location.x, y: location.y)
             
             if let p0 = panGestureEndedPoint, let p1 = panGestureBeganPoint {
-                panGestureRect = previewView.videoPreviewLayer.metadataOutputRectConverted(fromLayerRect: CGRect(x: p0.x, y: p0.y, width: p1.x-p0.x, height: p1.y-p0.y))
-            } else {
-                break
-            }
-            
-            if let rect = self.panGestureRect {
-                let convertedRect = previewView.videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: rect)
-                let panGestureRectPath: UIBezierPath = UIBezierPath(rect: convertedRect)
+                panGestureRect = CGRect(x: min(p0.x, p1.x), y: min(p0.y, p1.y), width: abs(p1.x-p0.x), height: abs(p1.y-p0.y))
+                let panGestureRectPath: UIBezierPath = UIBezierPath(rect: panGestureRect!)
                 panGestureRectLayer.path = panGestureRectPath.cgPath
-                self.previewView.videoPreviewLayer.addSublayer(panGestureRectLayer)
+                previewView.videoPreviewLayer.addSublayer(panGestureRectLayer)
             }
             
+            if let rect = panGestureRect {
+                roiRect = convertRectToVisionCoordinates(rect: rect)
+            }
         case .changed:
             panGestureRectLayer.removeFromSuperlayer()
             
@@ -101,16 +105,10 @@ class ViewController: UIViewController {
             panGestureEndedPoint = CGPoint(x: location.x, y: location.y)
             
             if let p0 = panGestureEndedPoint, let p1 = panGestureBeganPoint {
-                panGestureRect = previewView.videoPreviewLayer.metadataOutputRectConverted(fromLayerRect: CGRect(x: p0.x, y: p0.y, width: p1.x-p0.x, height: p1.y-p0.y))
-            } else {
-                break
-            }
-            
-            if let rect = self.panGestureRect {
-                let convertedRect = previewView.videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: rect)
-                let panGestureRectPath: UIBezierPath = UIBezierPath(rect: convertedRect)
+                panGestureRect = CGRect(x: min(p0.x, p1.x), y: min(p0.y, p1.y), width: abs(p1.x-p0.x), height: abs(p1.y-p0.y))
+                let panGestureRectPath: UIBezierPath = UIBezierPath(rect: panGestureRect!)
                 panGestureRectLayer.path = panGestureRectPath.cgPath
-                self.previewView.videoPreviewLayer.addSublayer(panGestureRectLayer)
+                previewView.videoPreviewLayer.addSublayer(panGestureRectLayer)
             }
             
         default:
@@ -157,13 +155,29 @@ class ViewController: UIViewController {
         print("Starting")
     }
 
-// MARK: - Vision handler
+    // MARK: - Vision handler
     func completionHandler(request: VNRequest, error: Error?) {
+        for uuid in trajectoryDictionary.keys {
+            // If the trajectory with the same key(UUID) is not detected after 5 frames, delete it.
+            if trajectoryDictionary[uuid]!.count > 5 {
+                trajectoryDictionary[uuid] = nil
+            }else {
+                trajectoryDictionary[uuid]!.count += 1
+            }
+        }
+        
+        if let e = error {
+            print(e)
+            return
+        }
+        
         guard let observations = request.results as? [VNTrajectoryObservation] else { return }
         
         for observation in observations {
-            
+            // Do not selet if confidence is less than 0.9
+            //if observation.confidence < 0.9 { continue }
             let uuid: UUID = observation.uuid
+            // Convert the coordinates of the bottom-left to ones of the upper-left
             let detectedPoints: [CGPoint] = observation.detectedPoints.compactMap {point in
                 return CGPoint(x: point.x, y: 1 - point.y)
             }
@@ -171,32 +185,21 @@ class ViewController: UIViewController {
                 return CGPoint(x: point.x, y: 1 - point.y)
             }
             
-            //let roi: CGRect = CGRect(x: 0.9, y: 0.25, width: 0.1, height: 0.5)
-            if let rect = panGestureRect {
-                if !isROI(detectedPoints: detectedPoints, roi: rect) {
-                    continue
-                }
-            }
-            
-            
-            if trajectoriesDict.keys.contains(uuid){
-                trajectoriesDict[uuid]!.detectedPoints.append(detectedPoints.last!)
-                trajectoriesDict[uuid]!.projectedPoints = projectedPoints
-                trajectoriesDict[uuid]!.equationCoefficients = observation.equationCoefficients
-                trajectoriesDict[uuid]!.confidence = observation.confidence
-                trajectoriesDict[uuid]!.count = 0
+            if trajectoryDictionary.keys.contains(uuid){
+                trajectoryDictionary[uuid]!.detectedPoints.append(detectedPoints.last!)
+                trajectoryDictionary[uuid]!.projectedPoints = projectedPoints
+                trajectoryDictionary[uuid]!.equationCoefficients = observation.equationCoefficients
+                trajectoryDictionary[uuid]!.confidence = observation.confidence
+                trajectoryDictionary[uuid]!.count = 0
             }else {
-                trajectoriesDict[uuid] = TrajectoryProperty(detectedPoints: detectedPoints, projectedPoints: projectedPoints, equationCoefficients: observation.equationCoefficients, confidence: observation.confidence)
+                trajectoryDictionary[uuid] = TrajectoryProperty(detectedPoints: detectedPoints, projectedPoints: projectedPoints, equationCoefficients: observation.equationCoefficients, confidence: observation.confidence)
             }
         }
-        drawTrajectories()
+        
+        drawTrajectories(trajectoryDictionary)
     }
     
     // MARK: - Trajectory drawing
-    
-    // Draw a Trajectory on screen. Must be called from main queue.
-    var trajectoryLayer = [CAShapeLayer]()
-    var trajectoriesDict: [UUID: TrajectoryProperty] = [:]
     
     // Remove all drawn trajectories. Must be called on main queue.
     func removeTrajectoryLayers() {
@@ -206,29 +209,25 @@ class ViewController: UIViewController {
         trajectoryLayer.removeAll()
     }
     
-    // Draws trajectories.
-    func drawTrajectories() {
+    // Draw a Trajectory on screen. Must be called from main queue.
+    func drawTrajectories(_ dict: [UUID: TrajectoryProperty]) {
         DispatchQueue.main.async {
             self.removeTrajectoryLayers()
-            if self.trajectoriesDict.count == 0 {
-                return
-            }
+            if dict.count == 0 { return }
             
-            let videoPreviewLayer = self.previewView.videoPreviewLayer
             let detectedPointPath = UIBezierPath()
             let projectedPointPath = UIBezierPath()
-            
-            for trajectoryProperty in self.trajectoriesDict {
-                detectedPointPath.move(to: videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: trajectoryProperty.value.detectedPoints[0]))
+            for trajectoryProperty in dict {
+                detectedPointPath.move(to: self.convertPointToUIViewCoordinates(normalizedPoint: trajectoryProperty.value.detectedPoints[0]))
                 for point in trajectoryProperty.value.detectedPoints {
-                    let convertedPoint = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: point)
+                    let convertedPoint = self.convertPointToUIViewCoordinates(normalizedPoint: point)
                     detectedPointPath.addLine(to: convertedPoint)
                 }
                 detectedPointPath.move(to: CGPoint())
                 
-                projectedPointPath.move(to: videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: trajectoryProperty.value.projectedPoints[0]))
+                projectedPointPath.move(to: self.convertPointToUIViewCoordinates(normalizedPoint: trajectoryProperty.value.projectedPoints[0]))
                 for point in trajectoryProperty.value.projectedPoints {
-                    let convertedPoint = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: point)
+                    let convertedPoint = self.convertPointToUIViewCoordinates(normalizedPoint: point)
                     projectedPointPath.addLine(to: convertedPoint)
                 }
                 projectedPointPath.move(to: CGPoint())
@@ -236,27 +235,51 @@ class ViewController: UIViewController {
             detectedPointPath.close()
             projectedPointPath.close()
             
-            let detectedPointLayer = CAShapeLayer()
-            detectedPointLayer.path = detectedPointPath.cgPath
-            detectedPointLayer.strokeColor = UIColor.red.cgColor
-            detectedPointLayer.lineWidth = 3.0
-            detectedPointLayer.fillColor = UIColor.clear.cgColor
-            detectedPointLayer.lineCap = .round
-            detectedPointLayer.opacity = 0.3
+            let detectedPointLayer = self.createCAShapeLayer(path: detectedPointPath.cgPath, strokeColor: UIColor.red.cgColor)
             self.trajectoryLayer.append(detectedPointLayer)
-            
-            let projectedPointLayer = CAShapeLayer()
-            projectedPointLayer.path = projectedPointPath.cgPath
-            projectedPointLayer.strokeColor = UIColor.green.cgColor
-            projectedPointLayer.lineWidth = 3.0
-            projectedPointLayer.fillColor = UIColor.clear.cgColor
-            projectedPointLayer.lineCap = .round
-            projectedPointLayer.opacity = 0.3
-            self.trajectoryLayer.append(projectedPointLayer)
-            
             self.previewView.videoPreviewLayer.addSublayer(detectedPointLayer)
+            
+            let projectedPointLayer = self.createCAShapeLayer(path: projectedPointPath.cgPath, strokeColor: UIColor.green.cgColor)
+            self.trajectoryLayer.append(projectedPointLayer)
             self.previewView.videoPreviewLayer.addSublayer(projectedPointLayer)
         }
+    }
+    
+    func createCAShapeLayer(path: CGPath, strokeColor: CGColor) -> CAShapeLayer {
+        let layer = CAShapeLayer()
+        layer.path = path
+        layer.strokeColor = strokeColor
+        layer.lineWidth = 3.0
+        layer.fillColor = UIColor.clear.cgColor
+        layer.lineCap = .round
+        layer.opacity = 0.3
+        
+        return layer
+    }
+    
+    func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
+        // Convert normalized coordinates to UI View's ones
+        let convertedX: CGFloat
+        let convertedY: CGFloat
+        
+        if let rect = panGestureRect {
+            // If ROI is setting
+            convertedX = rect.minX + normalizedPoint.x*rect.width
+            convertedY = rect.minY + normalizedPoint.y*rect.height
+        }else {
+            let videoRect = previewView.videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: CGRect(x: 0.0, y: 0.0, width: 1.0, height: 1.0))
+            convertedX = videoRect.origin.x + normalizedPoint.x*videoRect.width
+            convertedY = videoRect.origin.y + normalizedPoint.y*videoRect.height
+        }
+        
+        return CGPoint(x: convertedX, y: convertedY)
+    }
+    
+    func convertRectToVisionCoordinates(rect: CGRect) -> CGRect {
+        let videoRect = previewView.videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: CGRect(x: 0.0, y: 0.0, width: 1.0, height: 1.0))
+        let normalizedRect = CGRect(x: (rect.minX - videoRect.origin.x)/videoRect.width, y: (rect.minY - videoRect.origin.y)/videoRect.height, width: rect.width/videoRect.width, height: rect.height/videoRect.height)
+        let visionRect = CGRect(x: normalizedRect.minX, y: 1 - normalizedRect.maxY, width: abs(normalizedRect.width), height: abs(normalizedRect.height))
+        return visionRect
     }
 }
 
@@ -267,26 +290,21 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         
-        for key in trajectoriesDict.keys {
-            trajectoriesDict[key]!.count += 1
-            //If the trajectory with the same key(UUID) is not added after 5 frames, delete it.
-            if trajectoriesDict[key]!.count > 5 {
-                trajectoriesDict[key] = nil
+        let requestHandler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: .right, options: [:])
+        trajectoryQueue.async {
+            
+            if let rect = self.roiRect {
+                self.request.regionOfInterest = rect
+            }else {
+                // default setting
+                self.request.regionOfInterest = CGRect(x: 0.0, y: 0.0, width: 1.0, height: 1.0)
             }
-        }
-        
-        // These methods do not work??
-        // Set the normalized (0.0 to 1.0) minimum and maximum object sizes.
-        //request.objectMinimumNormalizedRadius = 0.0
-        //request.objectMaximumNormalizedRadius = 0.2
-        // Set the ROI to the left half of the image.
-        //request.regionOfInterest = CGRect(x: 0.0, y: 0.0, width: 0.5, height: 1.0)
-        
-        do {
-            let requestHandler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer)
-            try requestHandler.perform([request])
-        } catch {
-            // Handle the error.
+            
+            do {
+                try requestHandler.perform([self.request])
+            } catch {
+                // Handle the error.
+            }
         }
     }
 }

@@ -12,39 +12,32 @@
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="IdentifyingBallTrajectoriesinVideo" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC" customClass="PreviewView" customModule="IdentifyingBallTrajectoriesinVideo" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="rmt-jg-wEn" customClass="PreviewView" customModule="IdentifyingBallTrajectoriesinVideo" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <gestureRecognizers/>
-                                <connections>
-                                    <outletCollection property="gestureRecognizers" destination="6Nu-ga-6W9" appends="YES" id="TRG-Dr-OWH"/>
-                                    <outletCollection property="gestureRecognizers" destination="6dx-mP-iXB" appends="YES" id="4Qa-3x-mlI"/>
-                                </connections>
-                            </view>
-                        </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <gestureRecognizers/>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="BVC-2i-ETU" appends="YES" id="Dtq-eY-viI"/>
+                            <outletCollection property="gestureRecognizers" destination="0qw-R1-3fr" appends="YES" id="DyN-at-iOC"/>
+                        </connections>
                     </view>
                     <connections>
-                        <outlet property="previewView" destination="rmt-jg-wEn" id="JRn-AD-iSG"/>
+                        <outlet property="previewView" destination="8bC-Xf-vdC" id="C0T-eL-Lae"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
-                <panGestureRecognizer minimumNumberOfTouches="1" id="6Nu-ga-6W9">
+                <tapGestureRecognizer id="BVC-2i-ETU">
                     <connections>
-                        <action selector="panGesture:" destination="BYZ-38-t0r" id="rNt-XI-3Rf"/>
-                    </connections>
-                </panGestureRecognizer>
-                <tapGestureRecognizer id="6dx-mP-iXB">
-                    <connections>
-                        <action selector="tapGesture:" destination="BYZ-38-t0r" id="Y5o-Om-IOK"/>
+                        <action selector="tapGesture:" destination="BYZ-38-t0r" id="g68-0q-al4"/>
                     </connections>
                 </tapGestureRecognizer>
+                <panGestureRecognizer minimumNumberOfTouches="1" id="0qw-R1-3fr">
+                    <connections>
+                        <action selector="panGesture:" destination="BYZ-38-t0r" id="Wky-Wd-WYg"/>
+                    </connections>
+                </panGestureRecognizer>
             </objects>
             <point key="canvasLocation" x="34.782608695652179" y="88.392857142857139"/>
         </scene>
