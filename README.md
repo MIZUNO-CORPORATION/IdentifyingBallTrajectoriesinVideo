@@ -1,10 +1,11 @@
-#  【Swift】Vision Frameworkで動画からボールの軌道検出するアプリを作りました
+#  【Swift】動画からリアルタイムにボールの軌道を検出するアプリを作りました
 
 ## はじめに
-撮影している動画に対して、リアルタイムでボールの軌道を特定し、動画に軌道を重ね合わせるアプリを作成しました（下記のgifは作成したアプリでゴルフボールの軌道を検出したデモです） 。  
-SwiftのコンピュータビジョンフレームワークVsion Framework関係、特に軌道検出についての情報がほとんどネットに無かったので、記事を書きました。  
-私自身もVision Frameworkを使い始めたばかりなので、アドバイスをいただけると幸いです。  
-ソースコードは[こちら]()になります。  
+撮影している動画に対して、リアルタイムでボールの軌道を検出し、動画に軌道を重ね合わせるアプリを作成しました（下記のgifは作成したアプリでゴルフボールの軌道を検出したデモです） 。  
+画像処理を目的とした[Visionフレームワーク（顔検出、文字検出、バーコード検出、...）](https://developer.apple.com/documentation/vision)の中の１つの機能として、軌道検出がiOS14から使用できるようになりました。
+しかし、Vsionフレームワーク関係、特に軌道検出についての情報がほとんどネットに無かったので、記事を書きました。  
+私自身もVisionフレームワークを使い始めたばかりなので、アドバイスをいただけると幸いです。  
+ソースコードは[こちら](https://github.com/MIZUNO-CORPORATION/IdentifyingBallTrajectoriesinVideo)になります。  
 ![デモ動画](Demo/golf.gif)
 
 
@@ -12,10 +13,39 @@ SwiftのコンピュータビジョンフレームワークVsion Framework関係
 球技スポーツ（ゴルフ、野球、サッカー等）のボールの軌道検出のため  
 iOS14以降でのiPhone/iPadに対応
 
-## 対象者
-SwiftのVsion Frameworkの中にある軌道検出クラスVNDetectTrajectoriesRequestを用いてアプリ開発をしたい人  
 
+## 軌道検出の流れ
+軌道検出をするには「リクエスト」と「リクエストハンドラ」、「オブザベーション」を使います。
+1. リクエストで、Visionフレームワーク中の使用したい機能とパラメタを設定します（今回は、軌道検出機能の `VNDetectTrajectoriesRequest` を使用）
+1. リクエストハンドラに、処理したい画像と設定したリクエストを渡すことで検出処理が行われます
+1. オブザベーションで、検出結果が取得できます（今回は、軌道検出用途の `VNTrajectoryObservation` で取得）
 
+## 軌道検出で取得できる情報
+オブザベーションから下記のような情報が取得できます
+1. `detectedPoints`
+   - 検出された軌道の座標：リクエストで設定したフレーム数過去に遡り、フレーム数分の軌道の[0,1.0]に正規化されたx,y座標が取得される
+   - `[VNPoint]`  ：画像におけるx,y座標の配列
+   - アウトプット例：[[0.027778; 0.801562], [0.073618; 0.749221], [0.101400; 0.752338], [0.113900; 0.766406], [0.119444; 0.767187], [0.122233; 0.774219], [0.130556; 0.789063], [0.136111; 0.789063], [0.144444; 0.801562], [0.159733; 0.837897]]
+1. `projectedPoints`
+   - 予測された軌道の座標：過去の5フレーム分遡り、5点分の2次方程式に変換された軌道の[0,1.0]に正規化されたx,y座標が取得される
+   - `[VNPoint]`：画像におけるx,y座標の配列
+   - アウトプット例：[[0.122233; 0.771996], [0.130556; 0.782801], [0.136111; 0.791214], [0.144444; 0.805637], [0.159733; 0.837722]]
+1. `equationCoefficients`
+   - 予測された軌道の2次方程式：projectedPointで変換された軌道の2次方程式が取得される
+   - `simd_float3`：2次方程式の係数
+   - アウトプット例：SIMD3<Float>(15.573865, -2.6386108, 0.86183345)
+1. `uuid`
+    - 軌道のID：各軌道でIDが与えられる。次のフレームで検出した軌道が前のフレームで検出した軌道に含まれると判定された場合は、同じIDが与えられる
+    - `UUID`：一意のID
+    - アウトプット例：E5256430-439E-4B0F-91B0-9DA6D65C22EE
+1. `timeRange`
+    - ：
+    - `CMTimeRange`：
+    - アウトプット例：{{157245729991291/1000000000 = 157245.730}, {699938542/1000000000 = 0.700}}
+1. `confidence`
+    - 軌道の信頼度：[0,1.0]に正規化された検出された軌道の信頼度
+    - `VNConfidence`：[0,1.0]に正規化された観測物の精度の信頼水準
+    - アウトプット例：0.989471
 
 ## 実装方法
 ### 開発環境
@@ -91,10 +121,14 @@ func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBu
 
 ### 実装のポイント
 
+## さいごに
+間違いがありましたら、ご指摘いただけるとありがたいです。
+
 
 ## 参考文献
 - [Building a Feature-Rich App for Sports Analysis | Apple Developer Documentation](https://developer.apple.com/documentation/vision/building_a_feature-rich_app_for_sports_analysis)
 - [Identifying Trajectories in Video | Apple Developer Documentation](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video)
 - [Setting Up a Capture Session | Apple Developer Documentation](https://developer.apple.com/documentation/avfoundation/cameras_and_media_capture/setting_up_a_capture_session)
+- [](https://nn-hokuson.hatenablog.com/entry/2019/07/25/212153)
 
 
