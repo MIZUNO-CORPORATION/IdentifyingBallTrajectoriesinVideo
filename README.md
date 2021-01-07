@@ -6,7 +6,7 @@
 しかし、Vsionフレームワーク関係、特に軌道検出についての情報がほとんどネットに無かったので、記事を書きました。  
 私自身もVisionフレームワークを使い始めたばかりなので、アドバイスをいただけると幸いです。  
 ソースコードは[こちら](https://github.com/MIZUNO-CORPORATION/IdentifyingBallTrajectoriesinVideo)になります。  
-![デモ動画](Demo/golf.gif)
+![デモ動画](Demo/golf_swing.gif)
 
 
 ## 利用用途
