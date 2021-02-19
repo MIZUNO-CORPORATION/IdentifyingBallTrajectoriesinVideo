@@ -47,7 +47,7 @@ iOS14以降でのiPhone/iPadに対応
     - `VNConfidence`：観測物の精度の信頼水準
     - アウトプット例：0.989471
     
-![軌道検出の説明](images/rendered2x-1591650146.png)
+![軌道検出の説明](images/rendered2x-1591650146.png)  
 [Identifying Trajectories in Video | Apple Developer Documentation](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video)より引用しました
 
 
@@ -199,9 +199,9 @@ func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
 ```
 
 ## さいごに
-軌道検出の実装の流れについては、Visionフレームワークの他の機能と同様なため、理解しやすかったです。
+軌道検出の実装の流れについては、Visionフレームワークの他の機能と同様なため、理解しやすかったです。  
 ただ、動画撮影の設定と座標変換は、AVFoundationとUIKitのフレームワークについてもある程度理解しておかなくてはいけなく、実装が大変でした。
-下記の参考文献がとても参考になりました。
+下記の参考文献がとても参考になりました。  
 間違いがありましたら、ご指摘いただけるとありがたいです。
 
 
