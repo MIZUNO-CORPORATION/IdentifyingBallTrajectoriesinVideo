@@ -123,7 +123,7 @@ var request: VNDetectTrajectoriesRequest = VNDetectTrajectoriesRequest(frameAnal
     - セットすることにより、ノイズや小さな動くモノをフィルタにかけることができる
     - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、デフォルトが0.0になっている
     - 同様のプロパティminimumObjectSizeは非推奨になっている
-1. `regionOfInterest: CGRect`
+1. `regionOfInterest: CGRect`　※gifの青色の線が設定範囲になります
     - 軌道検出をする範囲を設定する
     - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、CGRectで原点と幅、高さを設定をし、デファルトは`CGRect(x: 0, y: 0, width: 0.5, height: 1.0)`になっている
 
@@ -199,7 +199,9 @@ func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
 ```
 
 ## さいごに
-今回の実装の難しさは、動画撮影の設定と座標変換にあり、Visionフレームワークを使用すること自体は難しくないように感じました。  
+軌道検出の実装の流れについては、Visionフレームワークの他の機能と同様なため、理解しやすかったです。
+ただ、動画撮影の設定と座標変換は、AVFoundationとUIKitのフレームワークについてもある程度理解しておかなくてはいけなく、実装が大変でした。
+下記の参考文献がとても参考になりました。
 間違いがありましたら、ご指摘いただけるとありがたいです。
 
 
@@ -207,6 +209,7 @@ func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
 - [Building a Feature-Rich App for Sports Analysis | Apple Developer Documentation](https://developer.apple.com/documentation/vision/building_a_feature-rich_app_for_sports_analysis)
 - [Identifying Trajectories in Video | Apple Developer Documentation](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video)
 - [Setting Up a Capture Session | Apple Developer Documentation](https://developer.apple.com/documentation/avfoundation/cameras_and_media_capture/setting_up_a_capture_session)
-- [](https://nn-hokuson.hatenablog.com/entry/2019/07/25/212153)
+- [【iOS12対応】Visionを使って顔検出を行う - おもちゃラボ](https://nn-hokuson.hatenablog.com/entry/2019/07/25/212153)
+- [【Vision・Core ML・iOS・Swift】リアルタイム映像のオブジェクトを識別する - Qiita](https://qiita.com/chino_tweet/items/da91690ef0143c9e8e9c)
 
 
