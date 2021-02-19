@@ -174,6 +174,9 @@ class ViewController: UIViewController {
         guard let observations = request.results as? [VNTrajectoryObservation] else { return }
         
         for observation in observations {
+            print(observation.detectedPoints)
+            print(observation.projectedPoints)
+            print(observation)
             // Do not selet if confidence is less than 0.9
             //if observation.confidence < 0.9 { continue }
             let uuid: UUID = observation.uuid
