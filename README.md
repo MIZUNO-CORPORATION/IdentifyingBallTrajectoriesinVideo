@@ -126,7 +126,7 @@ var request: VNDetectTrajectoriesRequest = VNDetectTrajectoriesRequest(frameAnal
     - 同様のプロパティminimumObjectSizeは非推奨になっている
 1. `regionOfInterest: CGRect`　※gifの青色の線が設定範囲になります
     - 軌道検出をする範囲を設定する
-    - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、CGRectで原点と幅、高さを設定をし、デファルトは`CGRect(x: 0, y: 0, width: 0.5, height: 1.0)`になっている
+    - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、CGRectで原点と幅、高さを設定をし、デファルトは`CGRect(x: 0, y: 0, width: 1.0, height: 1.0)`になっている
 
 ```swift: ViewController.swift
 request.objectMaximumNormalizedRadius = 0.5
