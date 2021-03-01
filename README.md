@@ -3,7 +3,8 @@
 ## はじめに
 撮影している動画に対して、リアルタイムでボールの軌道を検出し、動画に軌道を重ね合わせるアプリを作成しました（下記のgifは作成したアプリでゴルフボールの軌道を検出したデモです） 。  
 画像処理を目的とした[Visionフレームワーク（顔検出、文字検出、バーコード検出、...）](https://developer.apple.com/documentation/vision)の中の１つの機能として、軌道検出がiOS14から使用できるようになりました。
-しかし、Vsionフレームワーク関係、特に軌道検出についての情報がほとんどネットに無かったので、記事を書きました。  
+そこで、[Appleのドキュメント：Identifying Trajectories in Video](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video)を参考に軌道検出機能を実装しました。  
+しかし、Vsionフレームワーク関係、特に軌道検出についての情報が、ドキュメント以外にほとんどネットに無かったので、記事を書きました。  
 私自身もVisionフレームワークを使い始めたばかりなので、アドバイスをいただけると幸いです。  
 Qiitaの記事は[こちら](https://qiita.com/viendfig/items/66946618988e08592f4c)になります。  
 ![デモ動画](Demo/golf_swing.gif)
