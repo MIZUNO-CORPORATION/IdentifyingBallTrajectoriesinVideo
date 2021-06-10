@@ -1,3 +1,34 @@
+<<<<<<< HEAD
+#  Identifying Ball Trajectories in Video
+
+## Overview
+This is an app that detects the trajectory of a ball in real time from a video using the Vision framework. I assume that it capture in ball game sports where the background does not move. The gif below is a demo that detected the trajectory of a golf ball with the app. Starting in iOS 14, tvOS 14, and macOS 11, the framework provides the ability to detect the trajectories of objects in a video sequence. See the [Apple document: Identifying Trajectories in Video](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video) for more details.
+
+![Demo movie](Demo/golf_swing.gif)
+
+## Motivation
+A function that detects the trajectory  is now available from iOS 14 as one of the features of the Vision framework for image processing. Therefore, I have implemented this function by referring to the document. The result of detecting the trajectory has been magically wonderful!
+I have shared the source code here and [the article on the Qiita in japanese](https://qiita.com/viendfig/items/66946618988e08592f4c) because there was little information on the internet about the function, other than the documentation.
+I have just started using the Vision framework, so I would appreciate any advice. 
+
+
+## Flow of the trajectory detection
+The function use "Request", "Request Hander", and "Observation" to detect the trajectory.
+1. Request: You configure the `VNDetectTrajectoriesRequest` and its parameters you want to use in the Vision framework. 
+1. Request Handler: You pass the capturing movie and the request you configured. Then the detection process is performed.
+1. Observation: You can get the result from `VNTrajectoryObservation`.
+
+## Properties of the Observation Result
+The following properties can be obtained from the observation.
+1. `detectedPoints` (red line in gif)
+   - `[VNPoint]`: Array of x, y coordinates in the image frame
+   - You can get the x and y coordinates normalized to [0,1.0] of the trajectory for the number of frames that you configure as `trajectoryLength` in the request.
+   - Output example: [[0.027778; 0.801562], [0.073618; 0.749221], [0.101400; 0.752338], [0.113900; 0.766406], [0.119444; 0.767187], [0.122233; 0.774219], [0.130556; 0.789063], [0.136111; 0.789063], [0.144444; 0.801562], [0.159733; 0.837897]]
+1. `projectedPoints` (green line in gif)
+   - `[VNPoint]`: Array of x, y coordinates in the image frame
+   - Going back 5 frames in the past, you can get the x, y coordinates normalized to [0,1.0] of the trajectory converted into a quadratic equation for 5 points.
+   - Output example: [[0.122233; 0.771996], [0.130556; 0.782801], [0.136111; 0.791214], [0.144444; 0.805637], [0.159733; 0.837722]]
+=======
 #  【Swift】Visionフレームワークを用いた動画からリアルタイムにボールの軌道を検出するアプリ
 
 ## はじめに
@@ -31,44 +62,44 @@ iOS14以降でのiPhone/iPadに対応
    - 予測された軌道の座標：過去の5フレーム分遡り、5点分の2次方程式に変換された軌道の[0,1.0]に正規化されたx,y座標が取得される
    - `[VNPoint]`：画像におけるx,y座標の配列
    - アウトプット例：[[0.122233; 0.771996], [0.130556; 0.782801], [0.136111; 0.791214], [0.144444; 0.805637], [0.159733; 0.837722]]
+>>>>>>> c03f8594d07b37e8d6f6ba18ab3e670b7de121fc
 1. `equationCoefficients`
-   - 予測された軌道の2次方程式：projectedPointで変換された軌道の2次方程式が取得される
-   - `simd_float3`：2次方程式の係数
-   - アウトプット例：SIMD3<Float>(15.573865, -2.6386108, 0.86183345)
+   - `simd_float3`: the equation coefficients for the quadratic equation
+   - You can get the quadratic equation, f(x) = ax2 + bx + c, converted from projectedPoint
+   - Output example: SIMD3<Float>(15.573865, -2.6386108, 0.86183345)
 1. `uuid`
-    - 軌道のID：各軌道でIDが与えられる。次のフレームで検出した軌道が前のフレームで検出した軌道に含まれると判定された場合は、同じIDが与えられる
-    - `UUID`：一意のID
-    - アウトプット例：E5256430-439E-4B0F-91B0-9DA6D65C22EE
+    - `UUID`: Universally unique value
+    - You can get the ID of the each trajectory. If the trajectory detected in the next frame is included in one in the previous frame, the same ID is given.
+    - Output example: E5256430-439E-4B0F-91B0-9DA6D65C22EE
 1. `timeRange`
-    - 軌道のタイムスタンプ：各軌道の検出されたタイミングが取得される
-    - `CMTimeRange`：検出された時（Trajectory start）のタイムスタンプと検出され続けた（Detected trajectoryまでの）期間
-    - アウトプット例：{{157245729991291/1000000000 = 157245.730}, {699938542/1000000000 = 0.700}}
+    - `CMTimeRange`: Timestamp of the period from when the trajectory was detected (Trajectory start) to when it continued to be detected (from Detected trajectory).
+    - You can get the timestamp when the each trajectory detected.
+    - Output example: {{157245729991291/1000000000 = 157245.730}, {699938542/1000000000 = 0.700}}
 1. `confidence`
-    - 軌道の信頼度：[0,1.0]に正規化された検出された軌道の信頼度
-    - `VNConfidence`：観測物の精度の信頼水準
-    - アウトプット例：0.989471
+    - `VNConfidence`: Confidence level of accuracy of the detected trajectory
+    - You can get the confidence level normalized to [0,1.0] of the trajectory.
+    - Output example: 0.989471
     
-![軌道検出の説明](images/rendered2x-1591650146.png)  
-[Identifying Trajectories in Video | Apple Developer Documentation](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video)より引用しました
+![Explanation of detecting the trajectory](images/rendered2x-1591650146.png)  
+Cited from [Identifying Trajectories in Video | Apple Developer Documentation](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video).
 
 
-## 実装方法
-### 開発環境
+## Implementation
+### Development Environment
   - XCode 12.2
   - Swift 5
-### 使用フレームワーク
+### Framework
   1. UIKit
   1. Vision
   1. AVFoundation
 
-### 軌道検出に関係する実装の説明
-#### デバイスの向きの設定
-今回の実装だと`Landscape`等にすると動画の再生画面が90度回転してしまうため、`Portrait`に設定をしています。  
-![デバイスの向きの設定の説明](images/orientation_setting.png)
+### Implement a Trajectory Detection
+#### Configure a Device Orientation
+With my implementation, if I set the device orientation to `Landscape`, the video playback screen will rotate 90 degrees, so it is set to `Portrait`.  
+![Explanation of setting the device orientation](images/orientation_setting.png)
 
-#### 動画を再生・描画するViewの作成
-今回、`AVCaptureVideoPreviewLayer`を使用し、このレイヤーは入力デバイスによってキャプチャされたビデオを表示するために使用する`CALayer`のサブクラスです。  
-このレイヤーをキャプチャセッションと組み合わせて使用します。
+#### Display a Camera Preview
+Use `AVCaptureVideoPreviewLayer`. This layer is `CALayer`'s subclass that displays the video captured in the input device. This layer is combined with the capture session.
 ```swift: PreviewView.swift
 import UIKit
 import AVFoundation
@@ -84,42 +115,50 @@ class PreviewView: UIView {
     }
 }
 ```
-#### Storyboardとの連携
-デフォルトのViewController.swiftと紐づいたシーン中のViewに作成したPreviewView.swiftを紐付けます。
-![Storyboardとの連携の説明](images/storyboard_setting.png)
+#### Connect a Storyboard
+Associate the above PreviewView.swift with the Storyboard.
+![Explanation of assciating with Storyboard](images/storyboard_setting.png)
 
-#### 使用するフレームワーク
+#### Framework
 ```swift: ViewController.swift
 import UIKit
 import AVFoundation
 import Vision
 ```
 
-#### リクエストの宣言
-軌道を検出するため`VNDetectTrajectoriesRequest`を宣言し、引数は下記３つになります。  
+#### Create a Request
+Declare `VNDetectTrajectoriesRequest` to detect the trajectory, and the arguments are the following three.  
 1. `frameAnalysisSpacing: CMTime`
-    - 軌道の分析の時間間隔を設定する
-    - この値を大きくすると、分析にかけるフレームを間引くことができ、スペックの低いデバイスで有効になる
-`.zero`に設定すると全てのフレームを分析にかけることができるが負荷は大きくなる（今回は.zeroにしました）  
+    - Set time interval of analysing the trajectory.
+    - Increasing this value will thin out the frames to be analyzed, which will be effective for devices with low spec.  If set to `.zero`, all frames can be analyzed, but the load will be large. 
   
 1. `trajectoryLength: Int`
-    - 軌道に乗っている点に必要な数
-    - 最低は5点だが、点数が少ないとたくさんの軌道を誤認識してまう（個人的には、10点くらいにするとちょうど良くゴルフボールを捉えることができました）  
+    - Set the number of the point that compose with the trajectory.
+    - The minimum number is 5 points. If it is set a little number, it mis detect many trajactories. (I have set 10 points to catch a golf ball just right.)  
   
 1. `completionHandler: VNRequestCompletionHandler?`
-    - 検出が完了した際に呼ばれるクロージャ　※今回、completionHandlerというメソッドを作成し、それが呼ばれるようにしました  
+    - Set the closure called when detection is complete. (I have implemented the original method (completionHandler) and call it.)  
   
 ```swift: ViewController.swift
 var request: VNDetectTrajectoriesRequest = VNDetectTrajectoriesRequest(frameAnalysisSpacing: .zero, trajectoryLength: 10, completionHandler: completionHandler)
 ```
-#### リクエストのプロパティの設定
-リクエストのプロパティには下記の３つが用意されており、必要に応じて設定できます。
-1. `objectMaximumNormalizedRadius: Float`　※今回、設定値が反映されなかったので、機能していないように思います
-   - トラッキングしたいモノ（ボール）の半径の最大を設定する
-   - セットすることにより、大きな動くモノをフィルタにかけることができる
-   - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、デフォルトが1.0になっている
-   - 同様のプロパティmaximumObjectSizeは非推奨になっている
+#### Applying Filtering Criteria
+Set the following three properties that are prepared for the request as needed.
+1. `objectMaximumNormalizedRadius: Float` (In my implementation, the setting has not been reflected for unknown reasons.)
+   - Set a size that’s slightly larger than the object (ball) you want to detect.
+   - If setting it, you can filter moving large things.
+   - The setting range is [0.0, 1.0], which is the normalized frame size. The default is 1.0.
+   - The similar property `maximumObjectSize` has been deprecated.
 1. `objectMinimumNormalizedRadius: Float`
+<<<<<<< HEAD
+    - Set a size that’s slightly smaller than the object (ball) you want to detect.
+    - If setting it, you can filter moving small things and noises.
+    - The setting range is [0.0, 1.0], which is the normalized frame size. The default is 0.0.
+    - The similar property `minimumObjectSize` has been deprecated.
+1. `regionOfInterest: CGRect`  (The setting range is a blue line in gif.)
+    - Set a range for trajectory detection.
+    - The setting range is [0.0, 1.0], which is the normalized frame size. Set an origin, width, and height with `CGRect`. The default is `CGRect (x: 0, y: 0, width: 1.0, height: 1.0)`.
+=======
     - トラッキングしたいモノ（ボール）の半径の最小を設定する
     - セットすることにより、ノイズや小さな動くモノをフィルタにかけることができる
     - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、デフォルトが0.0になっている
@@ -127,6 +166,7 @@ var request: VNDetectTrajectoriesRequest = VNDetectTrajectoriesRequest(frameAnal
 1. `regionOfInterest: CGRect`　※gifの青色の線が設定範囲になります
     - 軌道検出をする範囲を設定する
     - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、CGRectで原点と幅、高さを設定をし、デファルトは`CGRect(x: 0, y: 0, width: 1.0, height: 1.0)`になっている
+>>>>>>> c03f8594d07b37e8d6f6ba18ab3e670b7de121fc
 
 ```swift: ViewController.swift
 request.objectMaximumNormalizedRadius = 0.5
@@ -134,8 +174,8 @@ request.objectMinimumNormalizedRadius = 0.1
 request.regionOfInterest = CGRect(x: 0, y: 0, width: 0.5, height: 1.0)
 ```
 
-#### リクエストハンドラの設定
-`orientation`を`.right`に設定しないと、90度回転した状態でリクエストハンドラに送られ、取得したオブザベーションから軌道の描画をする際に90度回転し直さなければいけなくなります。
+#### Call a Handler
+Set `orientation` to `.right`. because if you do not set it, captured images will be sent to the request handler with a 90 degree rotation, and you will have to rerotate it 90 degrees when drawing the trajectory from the acquired observations.
 ```swift: ViewController.swift
 func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     do {
@@ -147,8 +187,8 @@ func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBu
 }
 ```
 
-#### オブザベーションの取得
-取得した軌道の座標は、左下が原点のVisionの座標系であるため、左上が原点のUIViewの座標系に変換する必要があります。
+#### Process the Results
+Convert the coordinates of the acquired trajectories to the coordinate system of UIView of the origin in the upper because one of Vision of the origin is the lower left.
 ```swift: ViewController.swift
 func completionHandler(request: VNRequest, error: Error?) {
     if let e = error {
@@ -177,8 +217,8 @@ func completionHandler(request: VNRequest, error: Error?) {
 }
 ```
 
-#### 取得した軌道の座標をUIViewの画角に合わせる
-変換した座標は正規化された値のなので、軌道を正しく描画するためにUIViewの画角に変換する必要があります。
+#### Match the Results to UIView
+Convert to the UIView angle of view in order to draw the trajectories correctly because the converted coordinates are normalized values.
 ```
 func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
     // Convert normalized coordinates to UI View's ones
@@ -199,6 +239,14 @@ func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
 }
 ```
 
+<<<<<<< HEAD
+## How to Use the App
+1. Fix a device (iPhone or iPad) with a tripod.
+2. Launch the app and the recorded video will be displayed.
+3. When trajectories are detected in the video, the curves are drawn.
+4. Specify a trajectory detection range by dragging with your finger.
+5. Tap with your finger to cancel the detection range.
+=======
 ## アプリの使い方
 1. 三脚等でデバイスを固定する
 2. アプリを起動し、撮影された動画が表示される
@@ -211,9 +259,15 @@ func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
 ただ、動画撮影の設定と座標変換は、AVFoundationとUIKitのフレームワークについてもある程度理解しておかなくてはいけなく、実装が大変でした。
 下記の参考文献がとても参考になりました。  
 間違いがありましたら、ご指摘いただけるとありがたいです。
+>>>>>>> c03f8594d07b37e8d6f6ba18ab3e670b7de121fc
 
+## In Closing
+The flow of the trajectory detection implementation is similar to other features of the Vision framework, so it is easy to understand.
+However, it is difficult to implement the video recording settings and coordinate conversion because it is also necessary to understand the framework of AVFoundation and UIKit to some extent.
+The following references were very helpful.
+If this document make a mistake, I would appreciate it if you could point it out.
 
-## 参考文献
+## References
 - [Building a Feature-Rich App for Sports Analysis | Apple Developer Documentation](https://developer.apple.com/documentation/vision/building_a_feature-rich_app_for_sports_analysis)
 - [Identifying Trajectories in Video | Apple Developer Documentation](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video)
 - [Setting Up a Capture Session | Apple Developer Documentation](https://developer.apple.com/documentation/avfoundation/cameras_and_media_capture/setting_up_a_capture_session)
