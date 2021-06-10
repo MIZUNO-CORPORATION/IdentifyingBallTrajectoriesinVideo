@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #  Identifying Ball Trajectories in Video
 
 ## Overview
@@ -28,41 +27,6 @@ The following properties can be obtained from the observation.
    - `[VNPoint]`: Array of x, y coordinates in the image frame
    - Going back 5 frames in the past, you can get the x, y coordinates normalized to [0,1.0] of the trajectory converted into a quadratic equation for 5 points.
    - Output example: [[0.122233; 0.771996], [0.130556; 0.782801], [0.136111; 0.791214], [0.144444; 0.805637], [0.159733; 0.837722]]
-=======
-#  【Swift】Visionフレームワークを用いた動画からリアルタイムにボールの軌道を検出するアプリ
-
-## はじめに
-撮影している動画に対して、リアルタイムでボールの軌道を検出し、動画に軌道を重ね合わせるアプリを作成しました（下記のgifは作成したアプリでゴルフボールの軌道を検出したデモです） 。  
-画像処理を目的とした[Visionフレームワーク（顔検出、文字検出、バーコード検出、...）](https://developer.apple.com/documentation/vision)の中の１つの機能として、軌道検出がiOS14から使用できるようになりました。
-そこで、[Appleのドキュメント：Identifying Trajectories in Video](https://developer.apple.com/documentation/vision/identifying_trajectories_in_video)を参考に軌道検出機能を実装しました。  
-しかし、Vsionフレームワーク関係、特に軌道検出についての情報が、ドキュメント以外にほとんどネットに無かったので、記事を書きました。  
-私自身もVisionフレームワークを使い始めたばかりなので、アドバイスをいただけると幸いです。  
-Qiitaの記事は[こちら](https://qiita.com/viendfig/items/66946618988e08592f4c)になります。  
-![デモ動画](Demo/golf_swing.gif)
-
-
-## 利用用途
-球技スポーツ（ゴルフ、野球、サッカー等）のボールの軌道検出のため  
-iOS14以降でのiPhone/iPadに対応
-
-
-## 軌道検出の流れ
-軌道検出をするには「リクエスト」と「リクエストハンドラ」、「オブザベーション」を使います。
-1. リクエストで、Visionフレームワーク中の使用したい機能とパラメタを設定します（今回は、軌道検出機能の `VNDetectTrajectoriesRequest` を使用）
-1. リクエストハンドラに、処理したい画像と設定したリクエストを渡すことで検出処理が行われます
-1. オブザベーションで、検出結果が取得できます（今回は、軌道検出用途の `VNTrajectoryObservation` で取得）
-
-## 軌道検出で取得できる情報
-オブザベーションから下記のような情報が取得できます。
-1. `detectedPoints`（gifの赤色の線）
-   - 検出された軌道の座標：リクエストで設定したフレーム数過去に遡り、フレーム数分の軌道の[0,1.0]に正規化されたx,y座標が取得される
-   - `[VNPoint]`  ：画像におけるx,y座標の配列
-   - アウトプット例：[[0.027778; 0.801562], [0.073618; 0.749221], [0.101400; 0.752338], [0.113900; 0.766406], [0.119444; 0.767187], [0.122233; 0.774219], [0.130556; 0.789063], [0.136111; 0.789063], [0.144444; 0.801562], [0.159733; 0.837897]]
-1. `projectedPoints`（gifの緑色の線）
-   - 予測された軌道の座標：過去の5フレーム分遡り、5点分の2次方程式に変換された軌道の[0,1.0]に正規化されたx,y座標が取得される
-   - `[VNPoint]`：画像におけるx,y座標の配列
-   - アウトプット例：[[0.122233; 0.771996], [0.130556; 0.782801], [0.136111; 0.791214], [0.144444; 0.805637], [0.159733; 0.837722]]
->>>>>>> c03f8594d07b37e8d6f6ba18ab3e670b7de121fc
 1. `equationCoefficients`
    - `simd_float3`: the equation coefficients for the quadratic equation
    - You can get the quadratic equation, f(x) = ax2 + bx + c, converted from projectedPoint
@@ -150,7 +114,6 @@ Set the following three properties that are prepared for the request as needed.
    - The setting range is [0.0, 1.0], which is the normalized frame size. The default is 1.0.
    - The similar property `maximumObjectSize` has been deprecated.
 1. `objectMinimumNormalizedRadius: Float`
-<<<<<<< HEAD
     - Set a size that’s slightly smaller than the object (ball) you want to detect.
     - If setting it, you can filter moving small things and noises.
     - The setting range is [0.0, 1.0], which is the normalized frame size. The default is 0.0.
@@ -158,15 +121,6 @@ Set the following three properties that are prepared for the request as needed.
 1. `regionOfInterest: CGRect`  (The setting range is a blue line in gif.)
     - Set a range for trajectory detection.
     - The setting range is [0.0, 1.0], which is the normalized frame size. Set an origin, width, and height with `CGRect`. The default is `CGRect (x: 0, y: 0, width: 1.0, height: 1.0)`.
-=======
-    - トラッキングしたいモノ（ボール）の半径の最小を設定する
-    - セットすることにより、ノイズや小さな動くモノをフィルタにかけることができる
-    - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、デフォルトが0.0になっている
-    - 同様のプロパティminimumObjectSizeは非推奨になっている
-1. `regionOfInterest: CGRect`　※gifの青色の線が設定範囲になります
-    - 軌道検出をする範囲を設定する
-    - 設定範囲は、フレームのサイズを正規化した[0.0, 1.0]で、CGRectで原点と幅、高さを設定をし、デファルトは`CGRect(x: 0, y: 0, width: 1.0, height: 1.0)`になっている
->>>>>>> c03f8594d07b37e8d6f6ba18ab3e670b7de121fc
 
 ```swift: ViewController.swift
 request.objectMaximumNormalizedRadius = 0.5
@@ -239,27 +193,12 @@ func convertPointToUIViewCoordinates(normalizedPoint: CGPoint) -> CGPoint {
 }
 ```
 
-<<<<<<< HEAD
 ## How to Use the App
 1. Fix a device (iPhone or iPad) with a tripod.
 2. Launch the app and the recorded video will be displayed.
 3. When trajectories are detected in the video, the curves are drawn.
 4. Specify a trajectory detection range by dragging with your finger.
 5. Tap with your finger to cancel the detection range.
-=======
-## アプリの使い方
-1. 三脚等でデバイスを固定する
-2. アプリを起動し、撮影された動画が表示される
-3. 動画内で軌道を検出すると、曲線が描画される
-4. 軌道の検出範囲は、指でドラッグをすると指定できる
-5. 指でタップをすると、検出範囲が解除される
-
-## さいごに
-軌道検出の実装の流れについては、Visionフレームワークの他の機能と同様なため、理解しやすかったです。  
-ただ、動画撮影の設定と座標変換は、AVFoundationとUIKitのフレームワークについてもある程度理解しておかなくてはいけなく、実装が大変でした。
-下記の参考文献がとても参考になりました。  
-間違いがありましたら、ご指摘いただけるとありがたいです。
->>>>>>> c03f8594d07b37e8d6f6ba18ab3e670b7de121fc
 
 ## In Closing
 The flow of the trajectory detection implementation is similar to other features of the Vision framework, so it is easy to understand.
